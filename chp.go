@@ -5,20 +5,19 @@ package chp
 
 import "sync"
 
-// First returns the first value received from any of the channels.
+// First returns the first value received from any of the input channels.
 func First[T any](cs ...chan T) T {
 	done := make(chan struct{})
 	defer close(done) // release resources
 	return <-FanIn(done, cs...)
 }
 
-// FanIn returns an output channel that merges the values from all of the input
-// channels.
+// FanIn returns an output channel that merges values from each input channel.
 //
-// Value order is maintained in the output stream within each input channel, but
+// Value order is maintained in the output stream for each input channel, but
 // not across input channels. The output channel is closed when all of the input
 // channels are closed or when the done channel is closed. If the output stream
-// is no longer needed, close the done channel to free resources used by
+// is no longer needed, close the done channel to release resources used by
 // FanIn.
 func FanIn[T any](done <-chan struct{}, cs ...chan T) <-chan T {
 	out := make(chan T)

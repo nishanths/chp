@@ -30,7 +30,7 @@ func nchan(n int) ([]chan int, []int) {
 }
 
 func TestFanIn(t *testing.T) {
-	cs, sent := nchan(10000)
+	cs, sent := nchan(1000)
 
 	combined := FanIn(nil, cs...)
 	var got []int
