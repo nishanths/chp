@@ -1,5 +1,6 @@
-// Package chp implements common channel patterns. The channel element types
-// are defined using type parameters.
+// Package chp implements common channel patterns.
+//
+// The channel element types are defined using type parameters.
 package chp
 
 import "sync"
@@ -12,11 +13,13 @@ func First[T any](cs ...chan T) T {
 }
 
 // FanIn returns an output channel that merges the values from all of the input
-// channels. Value order is maintained in the output stream with respect to
-// each channel, but not across channels. The output channel is closed
-// when all of the input channels are themselves closed, or if the done channel
-// is closed. If the output stream is no longer necessary, close the done
-// channel to free resources used by FanIn.
+// channels.
+//
+// Value order is maintained in the output stream within each input channel, but
+// not across input channels. The output channel is closed when all of the input
+// channels are closed or when the done channel is closed. If the output stream
+// is no longer needed, close the done channel to free resources used by
+// FanIn.
 func FanIn[T any](done <-chan struct{}, cs ...chan T) <-chan T {
 	out := make(chan T)
 	var wg sync.WaitGroup
