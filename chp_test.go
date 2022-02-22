@@ -17,7 +17,7 @@ func TestMain(m *testing.M) {
 func TestMerge(t *testing.T) {
 	cs, sent := nchan(1000, 5)
 
-	merged := Merge(nil, cs...)
+	merged := Merge(nil, 42, cs...)
 	var got []int
 	for v := range merged {
 		got = append(got, v)

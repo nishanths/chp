@@ -10,7 +10,7 @@ import (
 func First[T any](cs ...chan T) T {
 	done := make(chan struct{})
 	defer close(done) // release resources
-	return <-Merge(done, cs...)
+	return <-Merge(done, 0, cs...)
 }
 
 // Merge multiplexes values from multiple input channels into a single output
@@ -18,12 +18,9 @@ func First[T any](cs ...chan T) T {
 // when the done channel is closed. If the output stream is no longer needed,
 // close the done channel to release resources used by Merge.
 //
-// The output channel's buffer capacity is the same as the first input channel's
-// buffer capacity.
-//
-// Implementation note: Merge starts one goroutine per input channel.
-func Merge[T any](done <-chan struct{}, cs ...chan T) <-chan T {
-	var out chan T
+// Implementation note: Merge starts one goroutine internally per input channel.
+func Merge[T any](done <-chan struct{}, buffer int, cs ...chan T) <-chan T {
+	out := make(chan T, buffer)
 	var wg sync.WaitGroup
 	wg.Add(len(cs))
 
@@ -33,9 +30,6 @@ func Merge[T any](done <-chan struct{}, cs ...chan T) <-chan T {
 	}()
 
 	for _, c := range cs {
-		if out == nil {
-			out = make(chan T, cap(c))
-		}
 		go func(c <-chan T) {
 			defer wg.Done()
 			for {
