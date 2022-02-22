@@ -1,28 +1,31 @@
-// Package chp implements common channel patterns.
-//
-// The channel element types are defined using type parameters.
+// Package chp implements common channel patterns. The channel element types are
+// defined using type parameters.
 package chp
 
-import "sync"
+import (
+	"sync"
+)
 
 // First returns the first value received from any of the input channels.
 func First[T any](cs ...chan T) T {
 	done := make(chan struct{})
 	defer close(done) // release resources
-	return <-FanIn(done, cs...)
+	return <-Merge(done, cs...)
 }
 
-// FanIn returns an output channel that merges values from each input channel.
-//
-// Value order is maintained in the output stream for each input channel, but
-// not across input channels. The output channel is closed when all of the input
-// channels are closed or when the done channel is closed. If the output stream
-// is no longer needed, close the done channel to release resources used by
-// FanIn.
-func FanIn[T any](done <-chan struct{}, cs ...chan T) <-chan T {
+// Merge multiplexes values from multiple input channels into a single output
+// channel. The output channel is closed when all input channels are closed, or
+// when the done channel is closed. If the output stream is no longer needed,
+// close the done channel to release resources used by Merge.
+func Merge[T any](done <-chan struct{}, cs ...chan T) <-chan T {
 	out := make(chan T)
 	var wg sync.WaitGroup
 	wg.Add(len(cs))
+
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
 
 	for _, c := range cs {
 		go func(c <-chan T) {
@@ -41,10 +44,15 @@ func FanIn[T any](done <-chan struct{}, cs ...chan T) <-chan T {
 		}(c)
 	}
 
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
+	return out
+}
 
+// Collect receives values from a channel and collects them in a slice. The
+// slice is returned when the channel is closed.
+func Collect[T any](c chan T) []T {
+	var out []T
+	for v := range c {
+		out = append(out, v)
+	}
 	return out
 }
