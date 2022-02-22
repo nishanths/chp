@@ -1,7 +1,7 @@
 package chp
 
-// ReceiveOnly provides a way to make a bidrectional channel receive-only
-// from the type system's perspective, without having write the element type
+// ReceiveOnly provides a way to make a bidrectional channel receive-only from
+// the type system's perspective, without having to write the channel element type
 // explicitly in source code.
 //
 // Note that this function cannot prevent code that already has a reference to c
@@ -12,8 +12,8 @@ func ReceiveOnly[T any](c chan T) <-chan T {
 	return d
 }
 
-// SendOnly provides a way to make a bidrectional channel receive-only
-// from the type system's perspective, without having write the element type
+// SendOnly provides a way to make a bidrectional channel send-only from the
+// type system's perspective, without having to write the channel element type
 // explicitly in source code.
 //
 // Note that this function cannot prevent code that already has a reference to c
