@@ -51,8 +51,8 @@ func TestCollect(t *testing.T) {
 }
 
 // nchan creates n channels, and sends k value into each of the n channels.
-// It closes each channel after sending the value.
-// nchan returns the created channels and the sent values.
+// It closes each channel after sending the values.
+// nchan returns the created channels and all of the sent values.
 func nchan(n, k int) ([]chan int, []int) {
 	var cs []chan int
 	var sent []int

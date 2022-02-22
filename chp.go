@@ -17,6 +17,8 @@ func First[T any](cs ...chan T) T {
 // channel. The output channel is closed when all input channels are closed, or
 // when the done channel is closed. If the output stream is no longer needed,
 // close the done channel to release resources used by Merge.
+//
+// Implementation note: Merge starts one goroutine per input channel.
 func Merge[T any](done <-chan struct{}, cs ...chan T) <-chan T {
 	out := make(chan T)
 	var wg sync.WaitGroup
