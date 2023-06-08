@@ -1,25 +1,34 @@
-// Package chp implements common channel patterns. The channel element types are
-// defined using type parameters.
+// Package chp implements common channel patterns.
+// The channel element types are defined using type parameters.
 package chp
 
 import (
 	"sync"
 )
 
-// First returns the first value received from any of the input channels.
-func First[T any](cs ...chan T) T {
+// first returns the last value received from any of the input channels.
+func last[T any](cs ...chan T) T {
 	done := make(chan struct{})
-	defer close(done) // release resources
-	return <-Merge(done, 0, cs...)
+	defer close(done)
+	var last T
+	for v := range merge(done, 0, cs...) {
+		last = v
+	}
+	return last
 }
 
-// Merge multiplexes values from multiple input channels into a single output
-// channel. The output channel is closed when all input channels are closed, or
-// when the done channel is closed. If the output stream is no longer needed,
-// close the done channel to release resources used by Merge.
-//
-// Implementation note: Merge starts one goroutine internally per input channel.
-func Merge[T any](done <-chan struct{}, buffer int, cs ...chan T) <-chan T {
+// first returns the first value received from any of the input channels.
+func first[T any](cs ...chan T) T {
+	done := make(chan struct{})
+	defer close(done)
+	return <-merge(done, 0, cs...)
+}
+
+// merge multiplexes values from multiple input channels into a single output
+// channel. (merge, internally, starts one goroutine per input channel.) merge
+// closes the output channel and releases resources either when all input
+// channels are closed or when done is closed.
+func merge[T any](done <-chan struct{}, buffer int, cs ...chan T) <-chan T {
 	out := make(chan T, buffer)
 	var wg sync.WaitGroup
 	wg.Add(len(cs))
@@ -49,9 +58,9 @@ func Merge[T any](done <-chan struct{}, buffer int, cs ...chan T) <-chan T {
 	return out
 }
 
-// Collect receives values from a channel and collects them in a slice. The
+// collect receives values from a channel and collects them in a slice. The
 // slice is returned when the channel is closed.
-func Collect[T any](c chan T) []T {
+func collect[T any](c chan T) []T {
 	var out []T
 	for v := range c {
 		out = append(out, v)
@@ -59,8 +68,12 @@ func Collect[T any](c chan T) []T {
 	return out
 }
 
-func Partition[T any](c <-chan T, predicate func(T) bool) (t, f <-chan T) {
-	tt, ff := make(chan T, cap(c)), make(chan T, cap(c))
+// partition sends each value received from the channel to either the t channel
+// or the f channel, based on whether the predicate function, applied to the
+// value, returns true or false, respectively.
+func partition[T any](c <-chan T, predicate func(T) bool) (t, f <-chan T) {
+	tt := make(chan T, cap(c))
+	ff := make(chan T, cap(c))
 	go func() {
 		defer close(ff)
 		defer close(tt)
@@ -75,7 +88,10 @@ func Partition[T any](c <-chan T, predicate func(T) bool) (t, f <-chan T) {
 	return tt, ff
 }
 
-func Map[T, U any](c <-chan T, f func(T) U) <-chan U {
+// mapchan sends each value received from the input channel
+// to the input channel after applying the mapping function f.
+// The output channel is closed when the input channel is closed.
+func mapchan[T, U any](c <-chan T, f func(T) U) <-chan U {
 	out := make(chan U, cap(c))
 	go func() {
 		defer close(out)
@@ -86,7 +102,10 @@ func Map[T, U any](c <-chan T, f func(T) U) <-chan U {
 	return out
 }
 
-func Choose[T any](c <-chan T, predicate func(T) bool) <-chan T {
+// choose sends to the output channel only those values
+// from the input channel that satisfy the predicate.
+// The output channel is closed when the input channel is closed.
+func choose[T any](c <-chan T, predicate func(T) bool) <-chan T {
 	out := make(chan T, cap(c))
 	go func() {
 		defer close(out)
@@ -99,7 +118,10 @@ func Choose[T any](c <-chan T, predicate func(T) bool) <-chan T {
 	return out
 }
 
-func Drop[T any](c <-chan T, predicate func(T) bool) <-chan T {
+// drop sends to the output channel only those values
+// from the input channel that do not satisfy the predicate.
+// The output channel is closed when the input channel is closed.
+func drop[T any](c <-chan T, predicate func(T) bool) <-chan T {
 	reverse := func(x T) bool { return !predicate(x) }
-	return Choose(c, reverse)
+	return choose(c, reverse)
 }
