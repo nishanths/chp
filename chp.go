@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-// first returns the last value received from any of the input channels.
+// last returns the last value received from any of the input channels.
 func last[T any](cs ...chan T) T {
 	done := make(chan struct{})
 	defer close(done)
