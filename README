@@ -1,15 +1,12 @@
-# chp
-
 Common channel patterns implemented using type parameters.
 
-The functions in this package are intentionally not exported. Copy and maintain
-any necessary functions manually.
+The functions in this package are intentionally not exported. Copy
+and maintain any necessary functions manually.
 
-## Docs
+# Docs
 
-Output of `go doc -u -all`:
+Output of "go doc -u -all":
 
-```
 package chp // import "github.com/nishanths/chp"
 
 Package chp implements common channel patterns. The channel element types are
@@ -62,4 +59,3 @@ func sendOnly[T any](c chan T) (s chan<- T)
     sendOnly provides a way to make a bidrectional channel send-only to the type
     system, without having to specify the channel element type explicitly in
     source code.
-```
