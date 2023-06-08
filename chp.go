@@ -25,9 +25,11 @@ func first[T any](cs ...chan T) T {
 }
 
 // merge multiplexes values from multiple input channels into a single output
-// channel. (merge, internally, starts one goroutine per input channel.) merge
-// closes the output channel and releases resources either when all input
-// channels are closed or when done is closed.
+// channel. merge closes the output channel and releases resources either when
+// all input channels are closed or when done is closed. The buffer parameter
+// specifies the capacity of the output channel.
+//
+// merge, internally, starts a goroutine per input channel.
 func merge[T any](done <-chan struct{}, buffer int, cs ...chan T) <-chan T {
 	out := make(chan T, buffer)
 	var wg sync.WaitGroup
