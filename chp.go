@@ -1,10 +1,37 @@
 // Package chp implements common channel patterns.
+//
 // The channel element types are defined using type parameters.
+// For functions that return a channel, the returned channel
+// has the same capacity as the input channel.
 package chp
 
 import (
 	"sync"
 )
+
+// take limits receives from a channel to at most n receives.
+func take[T any](c <-chan T, n int) <-chan T {
+	if n < 0 {
+		panic("n < 0")
+	}
+
+	out := make(chan T, cap(c))
+	go func() {
+		defer close(out)
+		if n == 0 {
+			return
+		}
+		var sent int
+		for v := range c {
+			out <- v
+			sent++
+			if sent == n {
+				break
+			}
+		}
+	}()
+	return out
+}
 
 // last returns the last value received from any of the input channels.
 func last[T any](cs ...chan T) T {

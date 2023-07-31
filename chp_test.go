@@ -1,7 +1,6 @@
 package chp
 
 import (
-	"fmt"
 	"math/rand"
 	"os"
 	"sort"
@@ -12,6 +11,19 @@ import (
 func TestMain(m *testing.M) {
 	rand.Seed(time.Now().Unix())
 	os.Exit(m.Run())
+}
+
+func TestTake(t *testing.T) {
+	cs, sent := nchan(1, 10)
+	c := cs[0]
+
+	d := take(c, 2)
+	var got []int
+	for v := range d {
+		got = append(got, v)
+	}
+
+	equalslice(t, got, sent[:2])
 }
 
 func TestMerge(t *testing.T) {
@@ -25,9 +37,7 @@ func TestMerge(t *testing.T) {
 
 	sort.Ints(got)
 	sort.Ints(sent)
-	if err := equalslice(sent, got); err != nil {
-		t.Error(err)
-	}
+	equalslice(t, got, sent)
 }
 
 func TestLast(t *testing.T) {
@@ -54,15 +64,12 @@ func TestCollect(t *testing.T) {
 
 	sort.Ints(got)
 	sort.Ints(sent)
-
-	if err := equalslice(sent, got); err != nil {
-		t.Error(err)
-	}
+	equalslice(t, got, sent)
 }
 
-// nchan creates n channels, and sends k values into each of the n channels.
-// It closes each channel after sending the values.
-// nchan returns the created channels and all of the sent values.
+// nchan creates n channels, and sends k random values into each of the
+// n channels. It closes each channel after sending the values. nchan
+// returns the created channels and all of the sent values.
 func nchan(n, k int) ([]chan int, []int) {
 	var cs []chan int
 	var sent []int
@@ -94,14 +101,15 @@ func randslice(size int) []int {
 	return out
 }
 
-func equalslice[T comparable](want, got []T) error {
-	if len(want) != len(got) {
-		return fmt.Errorf("slice length: got %d, want %d", len(got), len(want))
+func equalslice[T comparable](t *testing.T, got, want []T) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Errorf("len: got %d, want %d", len(got), len(want))
+		return
 	}
 	for i := 0; i < len(want); i++ {
-		if want[i] != got[i] {
-			return fmt.Errorf("slice element [%d]: got %v, want %v", i, got[i], want[i])
+		if got[i] != want[i] {
+			t.Errorf("[%d]: got %v, want %v", i, got[i], want[i])
 		}
 	}
-	return nil
 }
